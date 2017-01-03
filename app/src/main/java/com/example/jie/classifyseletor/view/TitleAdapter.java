@@ -25,6 +25,7 @@ import java.util.List;
  */
 
 public class TitleAdapter extends RecyclerView.Adapter<TitleAdapter.TitleViewHolder> {
+    private String TAG="TitleAdapter";
     private List<ClassifySeletorItem> list;
     private Context context;
     private TitleAdapter.OnItemClickListener onItemClickListener;
@@ -37,9 +38,15 @@ public class TitleAdapter extends RecyclerView.Adapter<TitleAdapter.TitleViewHol
     }
     //添加一个标题进来
     public void push(ClassifySeletorItem item){
+
         list.add(item);
         notifyDataSetChanged();
+        //自动滚动
         recyclerView.smoothScrollToPosition(getItemCount()-1);
+        Log.i(TAG, "push: －－－－－－－－－－－");
+        for (ClassifySeletorItem classifySeletorItem : list) {
+            Log.i(TAG, "push: "+classifySeletorItem.getName());
+        }
     }
     //返回上一级/删除一个标题
     public void pop(){
@@ -51,8 +58,10 @@ public class TitleAdapter extends RecyclerView.Adapter<TitleAdapter.TitleViewHol
      * 删除多个标题
      */
     private void setPage(int position){
-        for (int i = position; i <getItemCount(); i++) {
-            list.remove(list.size()-1);
+
+        int size=getItemCount();
+        for (int i = position+1; i <size; i++) {
+            ClassifySeletorItem remove = list.remove(getItemCount()-1);
         }
         notifyDataSetChanged();
     }
@@ -96,7 +105,7 @@ public class TitleAdapter extends RecyclerView.Adapter<TitleAdapter.TitleViewHol
                 @Override
                 public void onClick(View view) {
                    setPage(position);
-                    //把点击时间委托出去
+                    //把点击委托出去
                     onItemClickListener.click(holder,position,list.get(position));
                 }
             });

@@ -77,12 +77,13 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
      */
     public void setPage(int position) {
         if (!allowClick) return;
+
         //删除多余的路径
-        for (int i = position; i < path.size(); i++) {
+        int size=path.size();;
+        for (int i = position; i <size; i++) {
             path.remove(path.size() - 1);
         }
         level = position;
-        Log.i(TAG, "setPage: " + level + "," + path.get(level + ""));
         getData(-1, path.get(level + ""));
     }
 
@@ -290,6 +291,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
             itemAdapter = (ItemAdapter) recyclerView2.getAdapter();
             level++;
             if ((-1 == itemPosition && null == item)) {
+                //判断显示在那个recycler上面
                 if (frameLayoutTop == frameLayout1) {
                     itemAdapter = (ItemAdapter) recyclerView2.getAdapter();
                 } else {
