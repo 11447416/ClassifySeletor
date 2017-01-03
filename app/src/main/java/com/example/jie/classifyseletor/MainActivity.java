@@ -6,6 +6,7 @@ import android.util.Log;
 
 import com.example.jie.classifyseletor.view.ClassifySeletorItem;
 import com.example.jie.classifyseletor.view.ClassifySeletorView;
+import com.example.jie.classifyseletor.view.ItemAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,40 +24,56 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         init();
         ClassifySeletorView classifySeletorView = (ClassifySeletorView) findViewById(R.id.test_1);
-        classifySeletorView.setClassifySeletorListener(new ClassifySeletorListener() {
+//        classifySeletorView.setClassifySeletorListener(new ClassifySeletorListener() {
+//            @Override
+//            public List<ClassifySeletorItem> getData(int level, ClassifySeletorItem item) {
+//                Log.i("MainActivity", "main->getData: " + item.getName());
+//                List<ClassifySeletorItem> d = new ArrayList<>();
+//                for (ClassifySeletorItem i : data) {
+//                    if (i.getParentId().equals(item.getId())) {
+//                        d.add(i);
+//                    }
+//                }
+//                return d;
+//            }
+//
+//            @Override
+//            public ClassifySeletorItem getFirstData() {
+//                Log.i(TAG, "getFirstData: ");
+//                for (ClassifySeletorItem classifySeletorItem : data) {
+//                    if (classifySeletorItem.isRoot) {
+//                        return classifySeletorItem;
+//                    }
+//                }
+//                return new ClassifySeletorItem("0", "无分类", "1", true, 1, "safsdf");
+//            }
+//
+//            @Override
+//            public Boolean isFinal(ClassifySeletorItem item) {
+//                for (int i = 0; i < data.size(); i++) {
+//                    if (data.get(i).getLevel() == item.getLevel() + 1) {
+//                        if (data.get(i).getParentId().equals(item.getId())) {
+//                            return false;
+//                        }
+//                    }
+//                }
+//                return true;
+//            }
+//        });
+        classifySeletorView.setup(data, new SeletorListener() {
             @Override
-            public List<ClassifySeletorItem> getData(int level, ClassifySeletorItem item) {
-                Log.i("MainActivity", "main->getData: " + item.getName());
-                List<ClassifySeletorItem> d = new ArrayList<>();
-                for (ClassifySeletorItem i : data) {
-                    if (i.getParentId().equals(item.getId())) {
-                        d.add(i);
-                    }
-                }
-                return d;
+            public void clickItem(boolean isSelected, ItemAdapter.ItemViewHolder holder, int position, ClassifySeletorItem item) {
+                Log.d(TAG, "clickItem() called with: isSelected = [" + isSelected + "], holder = [" + holder + "], position = [" + position + "], item = [" + item + "]");
             }
 
             @Override
-            public ClassifySeletorItem getFirstData() {
-                Log.i(TAG, "getFirstData: ");
-                for (ClassifySeletorItem classifySeletorItem : data) {
-                    if (classifySeletorItem.isRoot) {
-                        return classifySeletorItem;
-                    }
-                }
-                return new ClassifySeletorItem("0", "无分类", "1", true, 1, "safsdf");
+            public void clickReset() {
+                Log.i(TAG, "clickReset: ");
             }
 
             @Override
-            public Boolean isFinal(ClassifySeletorItem item) {
-                for (int i = 0; i < data.size(); i++) {
-                    if (data.get(i).getLevel() == item.getLevel() + 1) {
-                        if (data.get(i).getParentId().equals(item.getId())) {
-                            return false;
-                        }
-                    }
-                }
-                return true;
+            public void clickOk(List<ClassifySeletorItem> selectItem) {
+                Log.d(TAG, "clickOk() called with: selectItem = [" + selectItem + "]");
             }
         });
     }

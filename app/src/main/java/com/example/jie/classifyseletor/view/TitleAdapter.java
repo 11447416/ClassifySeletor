@@ -43,10 +43,6 @@ public class TitleAdapter extends RecyclerView.Adapter<TitleAdapter.TitleViewHol
         notifyDataSetChanged();
         //自动滚动
         recyclerView.smoothScrollToPosition(getItemCount()-1);
-        Log.i(TAG, "push: －－－－－－－－－－－");
-        for (ClassifySeletorItem classifySeletorItem : list) {
-            Log.i(TAG, "push: "+classifySeletorItem.getName());
-        }
     }
     //返回上一级/删除一个标题
     public void pop(){

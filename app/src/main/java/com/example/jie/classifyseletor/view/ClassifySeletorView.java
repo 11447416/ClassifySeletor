@@ -29,8 +29,11 @@ public class ClassifySeletorView extends LinearLayout {
     private SlideContainer slideContainer;
     private TitleAdapter titleAdapter;
     private Button btnReset, btnOk;
-
     private ClassifySeletorItem firstHeadItem;
+
+    private List<ClassifySeletorItem> listData;
+    private SeletorListener seletorListener;
+
     public ClassifySeletorView(Context context) {
         super(context);
         this.context = context;
@@ -41,6 +44,61 @@ public class ClassifySeletorView extends LinearLayout {
         this.context = context;
     }
 
+    
+    /**
+     * 自动管理数据
+     */
+    public void setup(List<ClassifySeletorItem> data,SeletorListener listener){
+        this.listData=data;
+        this.seletorListener=listener;
+        setClassifySeletorListener(new ClassifySeletorListener() {
+            @Override
+            public List<ClassifySeletorItem> getData(int level, ClassifySeletorItem item) {
+                List<ClassifySeletorItem> d = new ArrayList<>();
+                for (ClassifySeletorItem i : listData) {
+                    if (i.getParentId().equals(item.getId())) {
+                        d.add(i);
+                    }
+                }
+                return d;
+            }
+
+            @Override
+            public ClassifySeletorItem getFirstData() {
+                for (ClassifySeletorItem classifySeletorItem : listData) {
+                    if (classifySeletorItem.isRoot) {
+                        return classifySeletorItem;
+                    }
+                }
+                return new ClassifySeletorItem("0", "没有分类数据", "1", true, 1, "");
+            }
+
+            @Override
+            public Boolean isFinal(ClassifySeletorItem item) {
+                for (int i = 0; i < listData.size(); i++) {
+                    if (listData.get(i).getLevel() == item.getLevel() + 1) {
+                        if (listData.get(i).getParentId().equals(item.getId())) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+            @Override
+            public void clickItem(boolean isSelected, ItemAdapter.ItemViewHolder holder, int position, ClassifySeletorItem item) {
+                seletorListener.clickItem(isSelected, holder, position, item);
+            }
+            @Override
+            public void clickReset() {
+                seletorListener.clickReset();
+            }
+
+            @Override
+            public void clickOk(List<ClassifySeletorItem> selectItem) {
+                seletorListener.clickOk(selectItem);
+            }
+        });
+    }
 
 
     //初始化布局
@@ -84,7 +142,6 @@ public class ClassifySeletorView extends LinearLayout {
         slideContainer.setSlideContainListener(new SlideContainer.SlideContainListener() {
             @Override
             public List<ClassifySeletorItem> getData(int itemPosition, ClassifySeletorItem item, int currentPage) {
-                Log.d(TAG, "getData() called with: itemPosition = [" + itemPosition + "], item = [" + item + "], currentPage = [" + currentPage + "]");
                 if(null==item){
                     //这里是加载第一个"全部分类"，然后加载第一页的数据
                     if(null==firstHeadItem){
@@ -92,7 +149,6 @@ public class ClassifySeletorView extends LinearLayout {
                         titleAdapter.push(firstHeadItem);//让路径添加一个
                     }
                     if(null==firstHeadItem)return null;
-                    Log.d(TAG, "getData()22 called with: itemPosition = [" + itemPosition + "], firstHeadItem = [" + firstHeadItem + "], currentPage = [" + currentPage + "]");
                     return classifySeletorListener.getData(currentPage, firstHeadItem);
                 }else{
                     //不是点击的导航栏，才添加导航栏路径
@@ -105,7 +161,6 @@ public class ClassifySeletorView extends LinearLayout {
             @Override
             public List<ClassifySeletorItem> pageBack(int currentPage, ClassifySeletorItem item) {
                 //返回的时候，还要加载数据
-                Log.d(TAG, "pageBack() called with: currentPage = [" + currentPage + "], item = [" + item + "]");
                 titleAdapter.pop();
                 if(null==item){
                     return classifySeletorListener.getData(2,firstHeadItem);
@@ -145,6 +200,9 @@ public class ClassifySeletorView extends LinearLayout {
         return slideContainer.getSelectItems();
     }
 
+    /**
+     * 手动管理数据的回调
+     */
     public static abstract class ClassifySeletorListener {
         /**
          * 用来加载某一页的数据
@@ -192,4 +250,36 @@ public class ClassifySeletorView extends LinearLayout {
          */
         public abstract Boolean isFinal(ClassifySeletorItem item);
     }
+
+    /**
+     * 自动管理数据的回调
+     */
+    public static abstract class SeletorListener {
+        /**
+         * 条目被点击了
+         *
+         * @param isSelected 是否选中
+         * @param holder     承载体
+         * @param position   位置
+         * @param item       内容
+         */
+        public void clickItem(boolean isSelected, ItemAdapter.ItemViewHolder holder, int position, ClassifySeletorItem item) {
+        }
+
+        /**
+         * 点击了重置按钮
+         */
+        public void clickReset() {
+        }
+
+        /**
+         * 点击了ok按钮
+         *
+         * @param selectItem 被选中的条目集合
+         */
+        public void clickOk(List<ClassifySeletorItem> selectItem) {
+        }
+
+    }
+
 }
