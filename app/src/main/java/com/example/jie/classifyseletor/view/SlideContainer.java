@@ -32,8 +32,8 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
     private RecyclerView recyclerView1, recyclerView2;
     private boolean needExchange = false; //是否需要交换页面
     private SlideContainListener slideContainListener;//获取数据的接口，把数据加载这个委托出去
-    private boolean allowClick=true;//是否允许点击，避免动画过程中点击，造成数据混乱
-    private Map<String,ClassifySeletorItem> path=new HashMap<>();//用来存储选择的路径
+    private boolean allowClick = true;//是否允许点击，避免动画过程中点击，造成数据混乱
+    private Map<String, ClassifySeletorItem> path = new HashMap<>();//用来存储选择的路径
 
     public SlideContainer(Context context) {
         super(context);
@@ -65,28 +65,32 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         ItemAdapter itemAdapter2 = new ItemAdapter(context);
         itemAdapter2.setOnItemClickListener(this);
         recyclerView2.setAdapter(itemAdapter2);
+
+        recyclerView1.setOverScrollMode(RecyclerView.OVER_SCROLL_NEVER);
+        recyclerView2.setOverScrollMode(RecyclerView.OVER_SCROLL_NEVER);
     }
 
     /**
      * 设置当前是第几页，主要是点击导航的时候，直接切换到某一页,
+     *
      * @param position
      */
-    public void setPage(int position){
-        if(!allowClick) return;
+    public void setPage(int position) {
+        if (!allowClick) return;
         //删除多余的路径
-        for (int i = position; i <path.size(); i++) {
-            path.remove(path.size()-1);
+        for (int i = position; i < path.size(); i++) {
+            path.remove(path.size() - 1);
         }
-        level =position;
-        Log.i(TAG, "setPage: "+level+","+path.get(level+""));
-        getData(-1, path.get(level+""));
+        level = position;
+        Log.i(TAG, "setPage: " + level + "," + path.get(level + ""));
+        getData(-1, path.get(level + ""));
     }
 
     @Override
     public void clickItemToLoadData(ItemAdapter.ItemViewHolder holder, int position, ClassifySeletorItem item) {
-        if(!allowClick) return;
+        if (!allowClick) return;
         //根据点击的item，加载下一页的数据
-        if (null==item.getFinal()) {
+        if (null == item.getFinal()) {
             //如果不知道节点是不是最后一级,调用构造，去判断
             item.setFinal(slideContainListener.isFinal(item));
         }
@@ -119,7 +123,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (level <=1) return false;//最上面一级，不可以再滑动
+        if (level <= 1) return false;//最上面一级，不可以再滑动
         switch (event.getAction()) {
             case MotionEvent.ACTION_MOVE:
                 //当向右滑动
@@ -164,8 +168,10 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         return true;
     }
 
-    //前进的动画和页面交换
-    private void moveNextPage() {
+    /**
+     * 直接交换页面，无动画
+     */
+    private void changePage() {
         final View view = getChildAt(0);
         removeView(view);
         addView(view);
@@ -174,6 +180,12 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         } else {
             frameLayoutTop = frameLayout1;
         }
+    }
+
+    //前进的动画和页面交换
+    private void moveNextPage() {
+        changePage();
+        final View view = getChildAt(1);
         //前进动画
         ValueAnimator animator = ValueAnimator.ofFloat(view.getMeasuredWidth(), 0).setDuration(500);
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -185,15 +197,18 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         animator.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animator) {
-                allowClick=false;//动画过程，禁止点击
+                allowClick = false;//动画过程，禁止点击
             }
+
             @Override
             public void onAnimationEnd(Animator animator) {
-                allowClick=true;//动画过程结束，可以点击
+                allowClick = true;//动画过程结束，可以点击
             }
+
             @Override
             public void onAnimationCancel(Animator animator) {
             }
+
             @Override
             public void onAnimationRepeat(Animator animator) {
             }
@@ -213,7 +228,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         animator.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animator) {
-                allowClick=false;//动画过程，禁止点击
+                allowClick = false;//动画过程，禁止点击
             }
 
             @Override
@@ -224,7 +239,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
                     level--;//把＋1的减回来
                     if (null != slideContainListener) {
                         //返回的时候，重新加载上一页的数据
-                        List<ClassifySeletorItem> getDataListenerData=slideContainListener.pageBack(level,path.get((level-1)+""));//表示上一页
+                        List<ClassifySeletorItem> getDataListenerData = slideContainListener.pageBack(level, path.get((level - 1) + ""));//表示上一页
                         ItemAdapter itemAdapter;
                         if (null != getDataListenerData) {
                             //判断当前显示的是哪个recyclerView,加载新的数据到另一个view
@@ -247,7 +262,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
                         frameLayoutTop = frameLayout1;
                     }
                 }
-                allowClick=true;//动画过程结束，可以点击
+                allowClick = true;//动画过程结束，可以点击
 
             }
 
@@ -268,23 +283,23 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         List<ClassifySeletorItem> data;
         ItemAdapter itemAdapter;
         //第一次加载或者点击的获取全部分类
-        if (null==item||(-1==itemPosition&&null==item)) {
+        if (null == item || (-1 == itemPosition && null == item)) {
             //获取首页的数据
             data = slideContainListener.getData(itemPosition, item, level);
             if (null == data) return;
             itemAdapter = (ItemAdapter) recyclerView2.getAdapter();
             level++;
-            if((-1==itemPosition&&null==item)){
+            if ((-1 == itemPosition && null == item)) {
                 if (frameLayoutTop == frameLayout1) {
                     itemAdapter = (ItemAdapter) recyclerView2.getAdapter();
                 } else {
                     itemAdapter = (ItemAdapter) recyclerView1.getAdapter();
                 }
-                moveNextPage();//页面动画
+                changePage();
             }
         } else {
             //如果不是点击的导航，需要把点击加入到路径，点击的导航，不需要添加
-            if(-1!=itemPosition)path.put(""+ level,item);
+            if (-1 != itemPosition) path.put("" + level, item);
             //加载下一页的数据
             data = slideContainListener.getData(itemPosition, item, level);
             if (null == data) return;
@@ -295,7 +310,11 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
                 itemAdapter = (ItemAdapter) recyclerView1.getAdapter();
             }
             level++;
-            moveNextPage();//页面动画
+            if (-1 != itemPosition) {
+                moveNextPage();//页面动画
+            } else {
+                changePage();
+            }
         }
         itemAdapter.setData(data);
     }
@@ -312,17 +331,18 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
 
     /**
      * 获取最后选中的状态
+     *
      * @return
      */
-    public List<ClassifySeletorItem> getSelectItems(){
-        return ((ItemAdapter)((RecyclerView)frameLayoutTop.getChildAt(0)).getAdapter()).getStatus();
+    public List<ClassifySeletorItem> getSelectItems() {
+        return ((ItemAdapter) ((RecyclerView) frameLayoutTop.getChildAt(0)).getAdapter()).getStatus();
     }
 
     /**
      * 全部取消
      */
-    public void reset(){
-        ((ItemAdapter)((RecyclerView)frameLayoutTop.getChildAt(0)).getAdapter()).reset();
+    public void reset() {
+        ((ItemAdapter) ((RecyclerView) frameLayoutTop.getChildAt(0)).getAdapter()).reset();
     }
 
 
@@ -341,7 +361,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
          *
          * @param currentPage 返回以后，页面的深度
          */
-        List<ClassifySeletorItem> pageBack(int currentPage,ClassifySeletorItem item);
+        List<ClassifySeletorItem> pageBack(int currentPage, ClassifySeletorItem item);
 
         /**
          * 当没有子元素的时候，点击的回调
@@ -354,6 +374,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
 
         /**
          * 判断某个节点是不是最后一级了
+         *
          * @param item 节点
          * @return false：不是，true：是
          */
