@@ -28,10 +28,17 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
     private Context context;
     private OnItemClickListener onItemClickListener;
     private List<ClassifySeletorItem> status = new ArrayList<>();//保存选中的item
+    //设置是否是单选模式
+    private boolean isSingleSelete=false;
 
     public ItemAdapter(Context context) {
         items = new ArrayList<>();
         this.context = context;
+    }
+
+
+    public void setSingleSelete(boolean singleSelete) {
+        isSingleSelete = singleSelete;
     }
 
     /**
@@ -108,13 +115,26 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
 
     //用来保存元素的状态
     private void clickSaveStatus(ItemViewHolder holder,int position){
-        if (status.contains(items.get(position))) {
-            status.remove(items.get(position));
-            holder.imageView.setSelected(false);
-        } else {
-            status.add(items.get(position));
-            holder.imageView.setSelected(true);
+        if(!isSingleSelete){
+            if (status.contains(items.get(position))) {
+                status.remove(items.get(position));
+                holder.imageView.setSelected(false);
+            } else {
+                status.add(items.get(position));
+                holder.imageView.setSelected(true);
+            }
+        }else{
+            Log.i(TAG, "clickSaveStatus: ");
+            if(holder.imageView.isSelected()){
+                reset();
+                holder.imageView.setSelected(false);
+            }else{
+                reset();
+                status.add(items.get(position));
+                holder.imageView.setSelected(true);
+            }
         }
+
     }
 
     @Override

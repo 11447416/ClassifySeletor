@@ -35,10 +35,14 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
     private boolean allowClick = true;//是否允许点击，避免动画过程中点击，造成数据混乱
     private Map<String, ClassifySeletorItem> path = new HashMap<>();//用来存储选择的路径
 
+
+    private  ItemAdapter itemAdapter1, itemAdapter2;
     public SlideContainer(Context context) {
         super(context);
         throw new UnsupportedOperationException("不支持java代码实例化，T_T");
     }
+
+
 
     public SlideContainer(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -59,10 +63,10 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         frameLayout2.setBackgroundColor(Color.WHITE);
 
         //设置适配器,数字序号对应：fragment1->recyclerVIew1->itemAdapter1
-        ItemAdapter itemAdapter = new ItemAdapter(context);
-        itemAdapter.setOnItemClickListener(this);
-        recyclerView1.setAdapter(itemAdapter);
-        ItemAdapter itemAdapter2 = new ItemAdapter(context);
+        itemAdapter1 = new ItemAdapter(context);
+        itemAdapter1.setOnItemClickListener(this);
+        recyclerView1.setAdapter(itemAdapter1);
+         itemAdapter2 = new ItemAdapter(context);
         itemAdapter2.setOnItemClickListener(this);
         recyclerView2.setAdapter(itemAdapter2);
 
@@ -70,6 +74,11 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         recyclerView2.setOverScrollMode(RecyclerView.OVER_SCROLL_NEVER);
     }
 
+
+    public void setSingleSelete(boolean isSingleSelete){
+        itemAdapter1.setSingleSelete(isSingleSelete);
+        itemAdapter2.setSingleSelete(isSingleSelete);
+    }
     /**
      * 设置当前是第几页，主要是点击导航的时候，直接切换到某一页,
      *

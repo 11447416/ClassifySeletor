@@ -18,6 +18,10 @@ import java.util.List;
 
 
 /**
+ * 分类选择器
+ * 2种使用的方式
+ * 第一种，直接调用setClassifySeletorListener，然后实现加载数据的回调方法，自己管理数据
+ * 第二种，使用setup，传入数据和需要使用的回调即可
  * Created by jie on 16/12/29.
  */
 
@@ -31,6 +35,9 @@ public class ClassifySeletorView extends LinearLayout {
     private Button btnReset, btnOk;
     private ClassifySeletorItem firstHeadItem;
 
+    //设置是否是单选模式
+    private boolean isSingleSelete=false;
+    //自动管理数据
     private List<ClassifySeletorItem> listData;
     private SeletorListener seletorListener;
 
@@ -44,13 +51,14 @@ public class ClassifySeletorView extends LinearLayout {
         this.context = context;
     }
 
-    
     /**
      * 自动管理数据
+     * @param data 数据
+     * @param listener 事件回调
      */
-    public void setup(List<ClassifySeletorItem> data,SeletorListener listener){
-        this.listData=data;
-        this.seletorListener=listener;
+    public void setup(List<ClassifySeletorItem> data, SeletorListener listener) {
+        this.listData = data;
+        this.seletorListener = listener;
         setClassifySeletorListener(new ClassifySeletorListener() {
             @Override
             public List<ClassifySeletorItem> getData(int level, ClassifySeletorItem item) {
@@ -84,10 +92,12 @@ public class ClassifySeletorView extends LinearLayout {
                 }
                 return true;
             }
+
             @Override
             public void clickItem(boolean isSelected, ItemAdapter.ItemViewHolder holder, int position, ClassifySeletorItem item) {
                 seletorListener.clickItem(isSelected, holder, position, item);
             }
+
             @Override
             public void clickReset() {
                 seletorListener.clickReset();
@@ -142,17 +152,17 @@ public class ClassifySeletorView extends LinearLayout {
         slideContainer.setSlideContainListener(new SlideContainer.SlideContainListener() {
             @Override
             public List<ClassifySeletorItem> getData(int itemPosition, ClassifySeletorItem item, int currentPage) {
-                if(null==item){
+                if (null == item) {
                     //这里是加载第一个"全部分类"，然后加载第一页的数据
-                    if(null==firstHeadItem){
-                        firstHeadItem=classifySeletorListener.getFirstData();
+                    if (null == firstHeadItem) {
+                        firstHeadItem = classifySeletorListener.getFirstData();
                         titleAdapter.push(firstHeadItem);//让路径添加一个
                     }
-                    if(null==firstHeadItem)return null;
+                    if (null == firstHeadItem) return null;
                     return classifySeletorListener.getData(currentPage, firstHeadItem);
-                }else{
+                } else {
                     //不是点击的导航栏，才添加导航栏路径
-                    if(-1!=itemPosition)titleAdapter.push(item);
+                    if (-1 != itemPosition) titleAdapter.push(item);
                     //加载数据
                     return classifySeletorListener.getData(currentPage, item);
                 }
@@ -162,12 +172,13 @@ public class ClassifySeletorView extends LinearLayout {
             public List<ClassifySeletorItem> pageBack(int currentPage, ClassifySeletorItem item) {
                 //返回的时候，还要加载数据
                 titleAdapter.pop();
-                if(null==item){
-                    return classifySeletorListener.getData(2,firstHeadItem);
-                }else{
-                    return classifySeletorListener.getData(currentPage+1, item);
+                if (null == item) {
+                    return classifySeletorListener.getData(2, firstHeadItem);
+                } else {
+                    return classifySeletorListener.getData(currentPage + 1, item);
                 }
             }
+
             @Override
             public void click(boolean isSelected, ItemAdapter.ItemViewHolder holder, int position, ClassifySeletorItem item) {
                 //item的点击事件委托出去
@@ -189,6 +200,15 @@ public class ClassifySeletorView extends LinearLayout {
     public void setClassifySeletorListener(ClassifySeletorListener classifySeletorListener) {
         this.classifySeletorListener = classifySeletorListener;
         init();
+    }
+
+    public boolean isSingleSelete() {
+        return isSingleSelete;
+    }
+
+    public void setSingleSelete(boolean singleSelete) {
+        isSingleSelete = singleSelete;
+        slideContainer.setSingleSelete(singleSelete);
     }
 
     /**
@@ -215,6 +235,7 @@ public class ClassifySeletorView extends LinearLayout {
 
         /**
          * 获取最开头的初始化数据
+         *
          * @return
          */
         public abstract ClassifySeletorItem getFirstData();
@@ -243,8 +264,10 @@ public class ClassifySeletorView extends LinearLayout {
          */
         public void clickOk(List<ClassifySeletorItem> selectItem) {
         }
+
         /**
          * 判断某个节点是不是最后一级了
+         *
          * @param item 节点
          * @return false：不是，true：是
          */

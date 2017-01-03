@@ -73,9 +73,10 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void clickOk(List<ClassifySeletorItem> selectItem) {
-                Log.d(TAG, "clickOk() called with: selectItem = [" + selectItem + "]");
+                Log.d(TAG, "clickOk() called with: selectItem = [" + selectItem.get(0).getName()+ "]");
             }
         });
+        classifySeletorView.setSingleSelete(true);
     }
 
     private void init() {
