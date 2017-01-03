@@ -32,7 +32,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
     private RecyclerView recyclerView1, recyclerView2;
     private boolean needExchange = false; //是否需要交换页面
     private SlideContainListener slideContainListener;//获取数据的接口，把数据加载这个委托出去
-
+    private boolean allowClick=true;//是否允许点击，避免动画过程中点击，造成数据混乱
     private Map<String,ClassifySeletorItem> path=new HashMap<>();//用来存储选择的路径
 
     public SlideContainer(Context context) {
@@ -72,6 +72,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
      * @param position
      */
     public void setPage(int position){
+        if(!allowClick) return;
         //删除多余的路径
         for (int i = position; i <path.size(); i++) {
             path.remove(path.size()-1);
@@ -83,6 +84,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
 
     @Override
     public void clickItemToLoadData(ItemAdapter.ItemViewHolder holder, int position, ClassifySeletorItem item) {
+        if(!allowClick) return;
         //根据点击的item，加载下一页的数据
         if (null==item.getFinal()) {
             //如果不知道节点是不是最后一级,调用构造，去判断
@@ -180,6 +182,22 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
                 view.setTranslationX((Float) valueAnimator.getAnimatedValue());
             }
         });
+        animator.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+                allowClick=false;//动画过程，禁止点击
+            }
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                allowClick=true;//动画过程结束，可以点击
+            }
+            @Override
+            public void onAnimationCancel(Animator animator) {
+            }
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+            }
+        });
         animator.start();
     }
 
@@ -195,6 +213,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         animator.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animator) {
+                allowClick=false;//动画过程，禁止点击
             }
 
             @Override
@@ -228,6 +247,8 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
                         frameLayoutTop = frameLayout1;
                     }
                 }
+                allowClick=true;//动画过程结束，可以点击
+
             }
 
             @Override
@@ -254,6 +275,11 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
             itemAdapter = (ItemAdapter) recyclerView2.getAdapter();
             level++;
             if((-1==itemPosition&&null==item)){
+                if (frameLayoutTop == frameLayout1) {
+                    itemAdapter = (ItemAdapter) recyclerView2.getAdapter();
+                } else {
+                    itemAdapter = (ItemAdapter) recyclerView1.getAdapter();
+                }
                 moveNextPage();//页面动画
             }
         } else {
