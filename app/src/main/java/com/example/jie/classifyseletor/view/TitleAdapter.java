@@ -57,7 +57,7 @@ public class TitleAdapter extends RecyclerView.Adapter<TitleAdapter.TitleViewHol
     /**
      * 删除多个标题
      */
-    private void setPage(int position){
+    public void setPage(int position){
 
         int size=getItemCount();
         for (int i = position+1; i <size; i++) {

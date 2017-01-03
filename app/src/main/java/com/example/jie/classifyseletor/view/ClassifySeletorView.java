@@ -59,6 +59,8 @@ public class ClassifySeletorView extends LinearLayout {
         btnReset.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
+                titleAdapter.setPage(0);
+                slideContainer.setPage(0);
                 slideContainer.reset();
                 classifySeletorListener.clickReset();
             }
