@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * 头部导航的适配器
  * Created by jie on 16/12/29.
  */
 
@@ -39,20 +40,18 @@ public class TitleAdapter extends RecyclerView.Adapter<TitleAdapter.TitleViewHol
         list.add(item);
         notifyDataSetChanged();
         recyclerView.smoothScrollToPosition(getItemCount()-1);
-
-
     }
     //返回上一级/删除一个标题
     public void pop(){
-        pop(1);
+        list.remove(list.size()-1);
+        notifyDataSetChanged();
     }
 
     /**
      * 删除多个标题
-     * @param num
      */
-    private void pop(int num){
-        for (int i = 0; i < num; i++) {
+    private void setPage(int position){
+        for (int i = position; i <getItemCount(); i++) {
             list.remove(list.size()-1);
         }
         notifyDataSetChanged();
@@ -66,10 +65,6 @@ public class TitleAdapter extends RecyclerView.Adapter<TitleAdapter.TitleViewHol
 
     @Override
     public void onBindViewHolder(final TitleViewHolder holder, final int position) {
-        for (ClassifySeletorItem classifySeletorItem : list) {
-            Log.i("------", "onBindViewHolder: "+classifySeletorItem);
-        }
-        Log.i("------", "onBindViewHolder: "+getItemCount()+","+position);
         if(0==position){
             //开头的 全部分类
             holder.ivArrow.setVisibility(View.GONE);
@@ -80,6 +75,7 @@ public class TitleAdapter extends RecyclerView.Adapter<TitleAdapter.TitleViewHol
             }else{
                 holder.tvText.setTextColor(Color.parseColor("#2c9dfc"));
             }
+            //第一个标题，左边要加padding
             holder.tvText.setPadding(20, holder.tvText.getPaddingTop(),holder.tvText.getPaddingRight(),holder.tvText.getPaddingBottom());
         }else if(position+1==list.size()){
             //最后一个，去掉箭头
@@ -99,7 +95,8 @@ public class TitleAdapter extends RecyclerView.Adapter<TitleAdapter.TitleViewHol
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    pop(getItemCount()-position-1);//删除多余的标题
+                   setPage(position);
+                    //把点击时间委托出去
                     onItemClickListener.click(holder,position,list.get(position));
                 }
             });
@@ -109,7 +106,6 @@ public class TitleAdapter extends RecyclerView.Adapter<TitleAdapter.TitleViewHol
 
     @Override
     public int getItemCount() {
-        Log.i("TitleAdapter", "getItemCount: "+list.size());
         return list.size();
     }
 
@@ -122,7 +118,6 @@ public class TitleAdapter extends RecyclerView.Adapter<TitleAdapter.TitleViewHol
             this.itemView=itemView;
             ivArrow = (ImageView) itemView.findViewById(R.id.customview_cs_rv_title_iv);
             tvText = (TextView) itemView.findViewById(R.id.customview_cs_rv_title_tv);
-
         }
     }
 
@@ -134,6 +129,12 @@ public class TitleAdapter extends RecyclerView.Adapter<TitleAdapter.TitleViewHol
         this.onItemClickListener = onItemClickListener;
     }
     public interface OnItemClickListener{
+        /**
+         * 标题的点击事件
+         * @param holder
+         * @param position
+         * @param item
+         */
         void click(TitleAdapter.TitleViewHolder holder, int position,ClassifySeletorItem item);
     }
 }

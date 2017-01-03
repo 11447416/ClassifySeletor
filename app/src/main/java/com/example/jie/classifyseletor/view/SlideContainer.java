@@ -4,10 +4,8 @@ import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Color;
-import android.support.annotation.BoolRes;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.ArrayMap;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -20,29 +18,26 @@ import java.util.Map;
 
 
 /**
+ * 主要用来处理下面显示的滑动和数据切换
+ * 使用的是在fragment里面放来2个recyclerView滑动切换
  * Created by jie on 16/12/29.
  */
 
 public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemClickListener {
     private String TAG = "SlideContainer";
-
     private float startX = 0, startY = 0;//开始点击的坐标，用来处理滑动冲突
-    private int currentPage = -1;//当前的页码
+    private int level = 0;//当前的页码
     private float parallax = 0.2f;//视差因子
     private FrameLayout frameLayout1, frameLayout2, frameLayoutTop;//用frameLayout套 一下，主要是为了以后增加蒙层
     private RecyclerView recyclerView1, recyclerView2;
     private boolean needExchange = false; //是否需要交换页面
     private SlideContainListener slideContainListener;//获取数据的接口，把数据加载这个委托出去
 
-    private Map<String,ClassifySeletorItem> path=new HashMap<>();
+    private Map<String,ClassifySeletorItem> path=new HashMap<>();//用来存储选择的路径
 
     public SlideContainer(Context context) {
         super(context);
         throw new UnsupportedOperationException("不支持java代码实例化，T_T");
-    }
-    public void subPage(int position){
-        Log.i(TAG, "subPage: "+position);
-        currentPage=position;
     }
 
     public SlideContainer(Context context, AttributeSet attrs) {
@@ -55,13 +50,15 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         frameLayout2.addView(recyclerView2);
         addView(frameLayout1);
         addView(frameLayout2);
-        //设置下面的rvitem垂直
+
         recyclerView1.setLayoutManager(new LinearLayoutManager(context));
         recyclerView2.setLayoutManager(new LinearLayoutManager(context));
-        frameLayoutTop = frameLayout2;
+        frameLayoutTop = frameLayout2;//最开始，显示在上层的是fragnment2
+        //必须设置背景颜色，不然透明会看起来页面错乱
         frameLayout1.setBackgroundColor(Color.WHITE);
         frameLayout2.setBackgroundColor(Color.WHITE);
 
+        //设置适配器,数字序号对应：fragment1->recyclerVIew1->itemAdapter1
         ItemAdapter itemAdapter = new ItemAdapter(context);
         itemAdapter.setOnItemClickListener(this);
         recyclerView1.setAdapter(itemAdapter);
@@ -70,8 +67,22 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         recyclerView2.setAdapter(itemAdapter2);
     }
 
+    /**
+     * 设置当前是第几页，主要是点击导航的时候，直接切换到某一页,
+     * @param position
+     */
+    public void setPage(int position){
+        //删除多余的路径
+        for (int i = position; i <path.size(); i++) {
+            path.remove(path.size()-1);
+        }
+        level =position;
+        Log.i(TAG, "setPage: "+level+","+path.get(level+""));
+        getData(-1, path.get(level+""));
+    }
+
     @Override
-    public void click(ItemAdapter.ItemViewHolder holder, int position, ClassifySeletorItem item) {
+    public void clickItemToLoadData(ItemAdapter.ItemViewHolder holder, int position, ClassifySeletorItem item) {
         //根据点击的item，加载下一页的数据
         if (null==item.getFinal()) {
             //如果不知道节点是不是最后一级,调用构造，去判断
@@ -80,10 +91,6 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         if (!item.getFinal()) {
             //不是最后一级，就加载新的一页的数据
             getData(position, item);
-        } else {
-            holder.imageView.setSelected(!holder.imageView.isSelected());
-            //把没有子内容的元素的点击时间委托出去
-            slideContainListener.click(holder.imageView.isSelected(), holder, position, item);
         }
     }
 
@@ -110,10 +117,10 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (currentPage <= 0) return false;
+        if (level <=1) return false;//最上面一级，不可以再滑动
         switch (event.getAction()) {
             case MotionEvent.ACTION_MOVE:
-                //当向右滑动，并且前面有页面的时候
+                //当向右滑动
                 if ((event.getX() - startX) > 0) {
                     if (frameLayout1 == frameLayoutTop) {
                         //按照比例手指滑动，移动当前页面
@@ -156,7 +163,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
     }
 
     //前进的动画和页面交换
-    private void nextPage() {
+    private void moveNextPage() {
         final View view = getChildAt(0);
         removeView(view);
         addView(view);
@@ -195,25 +202,21 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
                 //如果需要交换页面，需要在动画结束以后
                 if (needExchange) {
                     needExchange = false;
-                    currentPage--;
+                    level--;//把＋1的减回来
                     if (null != slideContainListener) {
                         //返回的时候，重新加载上一页的数据
-                        Log.i(TAG, "onAnimationEnd: get:"+currentPage+","+path.get((currentPage)+""));
-                        List<ClassifySeletorItem> getDataListenerData=slideContainListener.pageBack(currentPage,path.get((currentPage)+""));
+                        List<ClassifySeletorItem> getDataListenerData=slideContainListener.pageBack(level,path.get((level-1)+""));//表示上一页
                         ItemAdapter itemAdapter;
                         if (null != getDataListenerData) {
                             //判断当前显示的是哪个recyclerView,加载新的数据到另一个view
                             if (frameLayoutTop == frameLayout1) {
                                 itemAdapter = (ItemAdapter) recyclerView2.getAdapter();
-                                Log.i(TAG, "getData: 设置数据11");
                             } else {
-                                Log.i(TAG, "getData: 设置数据22");
                                 itemAdapter = (ItemAdapter) recyclerView1.getAdapter();
                             }
                             itemAdapter.setData(getDataListenerData);
                         }
                     }
-                    Log.i(TAG, "onAnimationEnd: "+getChildAt(1));
                     //出去
                     if (frameLayout1 == frameLayoutTop) {
                         removeView(frameLayout1);
@@ -224,8 +227,6 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
                         addView(frameLayout2, 0);
                         frameLayoutTop = frameLayout1;
                     }
-                    Log.i(TAG, "onAnimationEnd: "+getChildAt(1));
-
                 }
             }
 
@@ -243,40 +244,34 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
     //根据点击的item，获取下一页的新数据
     public void getData(int itemPosition, ClassifySeletorItem item) {
         if (null == slideContainListener) return;
-        List<ClassifySeletorItem> getDataListenerData;
+        List<ClassifySeletorItem> data;
         ItemAdapter itemAdapter;
-        if (currentPage == -1) {
+        //第一次加载或者点击的获取全部分类
+        if (null==item||(-1==itemPosition&&null==item)) {
             //获取首页的数据
-            getDataListenerData = slideContainListener.getData(itemPosition, item, 0);//
-            if (null == getDataListenerData) return;
+            data = slideContainListener.getData(itemPosition, item, level);
+            if (null == data) return;
             itemAdapter = (ItemAdapter) recyclerView2.getAdapter();
-            path.put("0",item);
-            Log.i(TAG, "getData: put:0->"+item);
+            level++;
+            if((-1==itemPosition&&null==item)){
+                moveNextPage();//页面动画
+            }
         } else {
-            currentPage++;
-            path.put(""+currentPage,item);
-            Log.i(TAG, "getData: put:"+currentPage+"->"+item);
+            //如果不是点击的导航，需要把点击加入到路径，点击的导航，不需要添加
+            if(-1!=itemPosition)path.put(""+ level,item);
             //加载下一页的数据
-            getDataListenerData = slideContainListener.getData(itemPosition, item, currentPage);
-            if (null == getDataListenerData) return;
+            data = slideContainListener.getData(itemPosition, item, level);
+            if (null == data) return;
             //判断当前显示的是哪个recyclerView,加载新的数据到另一个view
             if (frameLayoutTop == frameLayout1) {
                 itemAdapter = (ItemAdapter) recyclerView2.getAdapter();
-                Log.i(TAG, "getData: 设置数据11");
             } else {
-                Log.i(TAG, "getData: 设置数据22");
                 itemAdapter = (ItemAdapter) recyclerView1.getAdapter();
             }
+            level++;
+            moveNextPage();//页面动画
         }
-        itemAdapter.setData(getDataListenerData);
-        if (currentPage != -1) {
-            //说明不是初始化，就是点击，要下一页
-            nextPage();//页面动画
-        } else {
-            //加载首页数据，所以不跳转
-            currentPage++;
-        }
-
+        itemAdapter.setData(data);
     }
 
     public SlideContainListener getSlideContainListener() {
@@ -309,7 +304,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         /**
          * 获取当前需要显示的数据,注意，初始化加载第一页的数据的时候，item为null
          *
-         * @param itemPosition
+         * @param itemPosition -1表示点击的导航跳转的
          * @param item
          * @return 返回下一页要现实的数据
          */

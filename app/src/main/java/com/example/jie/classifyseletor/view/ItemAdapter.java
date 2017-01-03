@@ -27,7 +27,6 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
     private List<ClassifySeletorItem> items;
     private Context context;
     private OnItemClickListener onItemClickListener;
-
     private List<ClassifySeletorItem> status = new ArrayList<>();//保存选中的item
 
     public ItemAdapter(Context context) {
@@ -35,6 +34,9 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         this.context = context;
     }
 
+    /**
+     * 重置数据
+     */
     public void reset() {
         status.clear();
         notifyDataSetChanged();
@@ -61,38 +63,58 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         ClassifySeletorItem item=items.get(position);
         //根据点击的item，加载下一页的数据
         if (null==item.getFinal()) {
-            //如果不知道节点是不是最后一级,调用构造，去判断
+            //还不知道是不是最后一级,调用判断函数，去判断
             item.setFinal(onItemClickListener.isFinal(item));
         }
-        if (item.getFinal()) {
-            holder.arrow.setVisibility(View.GONE);
-        } else {
-            holder.arrow.setVisibility(View.VISIBLE);
-        }
-
-        //设置选中状态
+        //恢复选中状态
         if (status.contains(items.get(position))) {
             holder.imageView.setSelected(true);
         } else {
             holder.imageView.setSelected(false);
 
         }
-        //设置点击事件
-        holder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (null != onItemClickListener) {
-                    onItemClickListener.click(holder, position, items.get(position));
-                    //用来保存元素的状态
-                    if (status.contains(items.get(position))) {
-                        status.remove(items.get(position));
-                    } else {
-                        status.add(items.get(position));
-                        Log.i(TAG, "onClick: add:" + items.get(position).getName());
+
+        //根据是不是最后一级，来判断是否显示箭头
+        if (item.getFinal()) {
+            holder.arrow.setVisibility(View.GONE);
+            //如果是最后一级，直接处理选中，不考虑加载下一级
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    clickSaveStatus(holder,position);
+                }
+            });
+        } else {
+            holder.arrow.setVisibility(View.VISIBLE);
+            //不是最后一级，先设置图片的点击选中状态
+            holder.imageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    clickSaveStatus(holder,position);
+                }
+            });
+            //不是最后一级，再设置点击item，加载下一级
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (null != onItemClickListener) {
+                        //调用item的点击事件，加载数据
+                        onItemClickListener.clickItemToLoadData(holder, position, items.get(position));
                     }
                 }
-            }
-        });
+            });
+        }
+    }
+
+    //用来保存元素的状态
+    private void clickSaveStatus(ItemViewHolder holder,int position){
+        if (status.contains(items.get(position))) {
+            status.remove(items.get(position));
+            holder.imageView.setSelected(false);
+        } else {
+            status.add(items.get(position));
+            holder.imageView.setSelected(true);
+        }
     }
 
     @Override
@@ -138,7 +160,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
          * @param position
          * @param item
          */
-        void click(ItemViewHolder holder, int position, ClassifySeletorItem item);
+        void clickItemToLoadData(ItemViewHolder holder, int position, ClassifySeletorItem item);
         /**
          * 判断某个节点是不是最后一级了
          * @param item 节点

@@ -68,9 +68,8 @@ public class ClassifySeletorView extends LinearLayout {
         titleAdapter.setOnItemClickListener(new TitleAdapter.OnItemClickListener() {
             @Override
             public void click(TitleAdapter.TitleViewHolder holder, int position, ClassifySeletorItem item) {
-                titleAdapter.pop();//弹出当前标题
-                slideContainer.getData(position, item);
-                slideContainer.subPage(position);
+                Log.d(TAG, "click() called with: holder = [" + holder + "], position = [" + position + "], item = [" + item + "]");
+                slideContainer.setPage(position);
             }
         });
 
@@ -83,26 +82,33 @@ public class ClassifySeletorView extends LinearLayout {
         slideContainer.setSlideContainListener(new SlideContainer.SlideContainListener() {
             @Override
             public List<ClassifySeletorItem> getData(int itemPosition, ClassifySeletorItem item, int currentPage) {
-                Log.d(TAG, "getData() called with: itemPosition = [" + itemPosition + "], item = [" + item + "]");
+                Log.d(TAG, "getData() called with: itemPosition = [" + itemPosition + "], item = [" + item + "], currentPage = [" + currentPage + "]");
                 if(null==item){
-                    firstHeadItem=classifySeletorListener.getFirstData();
-                    titleAdapter.push(firstHeadItem);//让路径添加一个
+                    //这里是加载第一个"全部分类"，然后加载第一页的数据
+                    if(null==firstHeadItem){
+                        firstHeadItem=classifySeletorListener.getFirstData();
+                        titleAdapter.push(firstHeadItem);//让路径添加一个
+                    }
+                    if(null==firstHeadItem)return null;
+                    Log.d(TAG, "getData()22 called with: itemPosition = [" + itemPosition + "], firstHeadItem = [" + firstHeadItem + "], currentPage = [" + currentPage + "]");
                     return classifySeletorListener.getData(currentPage, firstHeadItem);
                 }else{
-                    titleAdapter.push(item);//让路径添加一个
+                    //不是点击的导航栏，才添加导航栏路径
+                    if(-1!=itemPosition)titleAdapter.push(item);
+                    //加载数据
+                    return classifySeletorListener.getData(currentPage, item);
                 }
-                //加载数据
-                return classifySeletorListener.getData(currentPage, item);
             }
 
             @Override
             public List<ClassifySeletorItem> pageBack(int currentPage, ClassifySeletorItem item) {
                 //返回的时候，还要加载数据
+                Log.d(TAG, "pageBack() called with: currentPage = [" + currentPage + "], item = [" + item + "]");
                 titleAdapter.pop();
                 if(null==item){
                     return classifySeletorListener.getData(2,firstHeadItem);
                 }else{
-                    return classifySeletorListener.getData(currentPage, item);
+                    return classifySeletorListener.getData(currentPage+1, item);
                 }
             }
             @Override
