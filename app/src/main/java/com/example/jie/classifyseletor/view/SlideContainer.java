@@ -25,9 +25,13 @@ import java.util.Map;
 
 public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemClickListener {
     private String TAG = "SlideContainer";
+
+    private float parallax = 0.2f;//视差因子
+    private float alpha = 0.4f;//遮罩层初始透明度
+
+
     private float startX = 0, startY = 0;//开始点击的坐标，用来处理滑动冲突
     private int level = 0;//当前的页码
-    private float parallax = 0.2f;//视差因子
     private FrameLayout frameLayout1, frameLayout2, frameLayoutTop;//用frameLayout套 一下，主要是为了以后增加蒙层
     private RecyclerView recyclerView1, recyclerView2;
     private boolean needExchange = false; //是否需要交换页面
@@ -153,13 +157,13 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
                         frameLayout1.setTranslationX((event.getX() - startX));
                         //造成视差
                         frameLayout2.setTranslationX(-(frameLayout2.getMeasuredWidth() * (parallax) - (event.getX() - startX) * parallax));
-                        maskView2.setAlpha(0.5f-0.5f*(frameLayout1.getTranslationX()/frameLayout1.getMeasuredWidth()));
+                        maskView2.setAlpha(alpha-alpha*(frameLayout1.getTranslationX()/frameLayout1.getMeasuredWidth()));
                     } else {
                         //按照比例手指滑动，移动当前页面
                         frameLayout2.setTranslationX((event.getX() - startX));
                         //造成视差
                         frameLayout1.setTranslationX(-(frameLayout1.getMeasuredWidth() * (parallax) - (event.getX() - startX) * parallax));
-                        maskView1.setAlpha(0.5f-0.5f*(frameLayout2.getTranslationX()/frameLayout2.getMeasuredWidth()));
+                        maskView1.setAlpha(alpha-alpha*(frameLayout2.getTranslationX()/frameLayout2.getMeasuredWidth()));
                     }
 
                 }
@@ -208,13 +212,17 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
     //前进的动画和页面交换
     private void moveNextPage() {
         changePage();
-        final View view = getChildAt(1);
+        final View topView = getChildAt(1);
+        final View bottomView = getChildAt(0);
         //前进动画
-        ValueAnimator animator = ValueAnimator.ofFloat(view.getMeasuredWidth(), 0).setDuration(500);
+        ValueAnimator animator = ValueAnimator.ofFloat(topView.getMeasuredWidth(), 0).setDuration(500);
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                view.setTranslationX((Float) valueAnimator.getAnimatedValue());
+                float value=(float) valueAnimator.getAnimatedValue();
+                topView.setTranslationX(value);
+                bottomView.setTranslationX(-(frameLayout1.getMeasuredWidth() -value) * parallax);
+                ((FrameLayout)bottomView).getChildAt(1).setAlpha(alpha*(1-(value/bottomView.getMeasuredWidth())));
             }
         });
         animator.addListener(new Animator.AnimatorListener() {
@@ -226,6 +234,8 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
             @Override
             public void onAnimationEnd(Animator animator) {
                 allowClick = true;//动画过程结束，可以点击
+                maskView1.setAlpha(0);
+                maskView2.setAlpha(0);
             }
 
             @Override
@@ -247,9 +257,9 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
             public void onAnimationUpdate(ValueAnimator valueAnimator) {
                 view.setTranslationX((Float) valueAnimator.getAnimatedValue());
                 if (frameLayout1 == frameLayoutTop) {
-                    maskView2.setAlpha(0.5f-0.5f*(frameLayout1.getTranslationX()/frameLayout1.getMeasuredWidth()));
+                    maskView2.setAlpha(alpha-alpha*(frameLayout1.getTranslationX()/frameLayout1.getMeasuredWidth()));
                 } else {
-                    maskView1.setAlpha(0.5f-0.5f*(frameLayout2.getTranslationX()/frameLayout2.getMeasuredWidth()));
+                    maskView1.setAlpha(alpha-alpha*(frameLayout2.getTranslationX()/frameLayout2.getMeasuredWidth()));
                 }
 
             }
