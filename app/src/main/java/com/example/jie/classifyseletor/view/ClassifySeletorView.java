@@ -138,7 +138,6 @@ public class ClassifySeletorView extends LinearLayout {
         titleAdapter.setOnItemClickListener(new TitleAdapter.OnItemClickListener() {
             @Override
             public void click(TitleAdapter.TitleViewHolder holder, int position, ClassifySeletorItem item) {
-                Log.d(TAG, "click() called with: holder = [" + holder + "], position = [" + position + "], item = [" + item + "]");
                 slideContainer.setPage(position);
             }
         });

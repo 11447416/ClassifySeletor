@@ -3,6 +3,7 @@ package com.example.jie.classifyseletor;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.example.jie.classifyseletor.view.ClassifySeletorItem;
 import com.example.jie.classifyseletor.view.ClassifySeletorView;
@@ -73,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void clickOk(List<ClassifySeletorItem> selectItem) {
+                Toast.makeText(MainActivity.this,selectItem.get(0).getName(),Toast.LENGTH_LONG).show();
                 Log.d(TAG, "clickOk() called with: selectItem = [" + selectItem.get(0).getName()+ "]");
             }
         });

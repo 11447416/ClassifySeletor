@@ -34,6 +34,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
     private SlideContainListener slideContainListener;//获取数据的接口，把数据加载这个委托出去
     private boolean allowClick = true;//是否允许点击，避免动画过程中点击，造成数据混乱
     private Map<String, ClassifySeletorItem> path = new HashMap<>();//用来存储选择的路径
+    private View maskView1,maskView2;//遮罩
 
 
     private  ItemAdapter itemAdapter1, itemAdapter2;
@@ -54,6 +55,15 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         frameLayout2.addView(recyclerView2);
         addView(frameLayout1);
         addView(frameLayout2);
+        //添加遮罩
+        maskView1=new View(context);
+        maskView2=new View(context);
+        maskView1.setBackgroundColor(Color.BLACK);
+        maskView2.setBackgroundColor(Color.BLACK);
+        maskView1.setAlpha(0);
+        maskView2.setAlpha(0);
+        frameLayout1.addView(maskView1);
+        frameLayout2.addView(maskView2);
 
         recyclerView1.setLayoutManager(new LinearLayoutManager(context));
         recyclerView2.setLayoutManager(new LinearLayoutManager(context));
@@ -143,12 +153,15 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
                         frameLayout1.setTranslationX((event.getX() - startX));
                         //造成视差
                         frameLayout2.setTranslationX(-(frameLayout2.getMeasuredWidth() * (parallax) - (event.getX() - startX) * parallax));
+                        maskView2.setAlpha(0.5f-0.5f*(frameLayout1.getTranslationX()/frameLayout1.getMeasuredWidth()));
                     } else {
                         //按照比例手指滑动，移动当前页面
                         frameLayout2.setTranslationX((event.getX() - startX));
                         //造成视差
                         frameLayout1.setTranslationX(-(frameLayout1.getMeasuredWidth() * (parallax) - (event.getX() - startX) * parallax));
+                        maskView1.setAlpha(0.5f-0.5f*(frameLayout2.getTranslationX()/frameLayout2.getMeasuredWidth()));
                     }
+
                 }
                 break;
             case MotionEvent.ACTION_UP:
@@ -233,14 +246,20 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
             @Override
             public void onAnimationUpdate(ValueAnimator valueAnimator) {
                 view.setTranslationX((Float) valueAnimator.getAnimatedValue());
+                if (frameLayout1 == frameLayoutTop) {
+                    maskView2.setAlpha(0.5f-0.5f*(frameLayout1.getTranslationX()/frameLayout1.getMeasuredWidth()));
+                } else {
+                    maskView1.setAlpha(0.5f-0.5f*(frameLayout2.getTranslationX()/frameLayout2.getMeasuredWidth()));
+                }
+
             }
         });
         animator.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animator) {
                 allowClick = false;//动画过程，禁止点击
-            }
 
+            }
             @Override
             public void onAnimationEnd(Animator animator) {
                 //如果需要交换页面，需要在动画结束以后
@@ -273,7 +292,8 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
                     }
                 }
                 allowClick = true;//动画过程结束，可以点击
-
+                maskView1.setAlpha(0);
+                maskView2.setAlpha(0);
             }
 
             @Override
