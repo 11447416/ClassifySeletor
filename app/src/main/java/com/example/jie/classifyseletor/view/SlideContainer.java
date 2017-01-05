@@ -233,6 +233,8 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
                 allowClick = true;//动画过程结束，可以点击
                 maskView1.setAlpha(0);
                 maskView2.setAlpha(0);
+                //加载了下一页，要把上一页的选中状态清理了。
+                ((ItemAdapter)((RecyclerView)((FrameLayout)getChildAt(0)).getChildAt(0)).getAdapter()).reset();
             }
 
             @Override
@@ -341,11 +343,6 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
 //                    getData(-1, path.get((／level+"")));//因为页面复用的原因，上一页，本来还是原来的数据，所以不用加载数据
                     if(slideContainListener!=null)slideContainListener.pageBack(level,path.get(level+""));
                     //更新状态，取消已经选中的按钮
-                    if(frameLayoutTop==frameLayout1){
-                        itemAdapter2.notifyDataSetChanged();
-                    }else{
-                        itemAdapter1.notifyDataSetChanged();
-                    }
                     changePage();
                     if(level>0){
                         //把再前面一页的数据加载好，避免再次回退，看到不正确的数据
@@ -374,21 +371,21 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         Log.i(TAG, "getData: itemPosition:"+itemPosition+",level:"+level);
         if (null == slideContainListener) return;
         List<ClassifySeletorItem> data;
-        ItemAdapter itemAdapter;
+        ItemAdapter itemAdapterTop;
         //第一次加载或者点击的获取全部分类
         if (null == item) {
             //获取首页的数据
             data = slideContainListener.getData(itemPosition, item, level);
             if (null == data) return;
             //最开始初始化的时候，rv2在上面
-            itemAdapter = (ItemAdapter) recyclerView2.getAdapter();
+            itemAdapterTop = (ItemAdapter) recyclerView2.getAdapter();
 
             if (-1 == itemPosition) {
                 //点击的导航标题跳转，判断显示在那个recycler上面
                 if (frameLayoutTop == frameLayout1) {
-                    itemAdapter = (ItemAdapter) recyclerView2.getAdapter();
+                    itemAdapterTop = (ItemAdapter) recyclerView2.getAdapter();
                 } else {
-                    itemAdapter = (ItemAdapter) recyclerView1.getAdapter();
+                    itemAdapterTop = (ItemAdapter) recyclerView1.getAdapter();
                 }
             }
         } else {
@@ -401,12 +398,13 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
             if (null == data) return;
             //判断当前显示的是哪个recyclerView,加载新的数据到另一个view
             if (frameLayoutTop == frameLayout1) {
-                itemAdapter = (ItemAdapter) recyclerView2.getAdapter();
+                itemAdapterTop = (ItemAdapter) recyclerView2.getAdapter();
             } else {
-                itemAdapter = (ItemAdapter) recyclerView1.getAdapter();
+                itemAdapterTop = (ItemAdapter) recyclerView1.getAdapter();
             }
         }
-        itemAdapter.setData(data);
+        itemAdapterTop.setData(data);
+
         level++;//加载完数据以后，一定要把深度＋1
     }
 
