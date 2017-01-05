@@ -29,7 +29,10 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
     private OnItemClickListener onItemClickListener;
     private List<ClassifySeletorItem> status = new ArrayList<>();//保存选中的item
     //设置是否是单选模式
-    private boolean isSingleSelete=false;
+    private  boolean isSingleSelete=false;
+
+    //为了一个蛋疼的跳了页面，还要认为刚才的是选中的
+    private static ClassifySeletorItem seletedItem;
 
     public ItemAdapter(Context context) {
         items = new ArrayList<>();
@@ -77,8 +80,12 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         if (status.contains(items.get(position))) {
             holder.imageView.setSelected(true);
         } else {
-            holder.imageView.setSelected(false);
+            if(seletedItem==item){
+                holder.imageView.setSelected(true);
 
+            }else{
+                holder.imageView.setSelected(false);
+            }
         }
 
         //根据是不是最后一级，来判断是否显示箭头
@@ -123,8 +130,8 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
                 status.add(items.get(position));
                 holder.imageView.setSelected(true);
             }
+
         }else{
-            Log.i(TAG, "clickSaveStatus: ");
             if(holder.imageView.isSelected()){
                 reset();
                 holder.imageView.setSelected(false);
@@ -134,7 +141,9 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
                 holder.imageView.setSelected(true);
             }
         }
-
+        //单选
+        onItemClickListener.clickItem(items.get(position));
+        seletedItem=items.get(position);
     }
 
     @Override
@@ -187,5 +196,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
          * @return false：不是，true：是
          */
         Boolean isFinal(ClassifySeletorItem item);
+        //点击改变状态的时候
+        void clickItem( ClassifySeletorItem item);
     }
 }

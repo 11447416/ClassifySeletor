@@ -46,6 +46,8 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
 
     private ItemAdapter itemAdapter1, itemAdapter2;
 
+    private ClassifySeletorItem seletedItem;
+
     public SlideContainer(Context context) {
         super(context);
         throw new UnsupportedOperationException("不支持java代码实例化，T_T");
@@ -134,6 +136,17 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
             //新的页面滑动到第一个
             ((LinearLayoutManager)((RecyclerView)((FrameLayout)getChildAt(0)).getChildAt(0)).getLayoutManager()).scrollToPositionWithOffset(0, 0);
             moveNextPage();
+        }
+    }
+
+    @Override
+    public void clickItem(ClassifySeletorItem item) {
+        Log.i(TAG, "clickItem: "+item.getName());
+        seletedItem=item;
+        if (frameLayout1 == frameLayoutTop) {
+            ((RecyclerView)frameLayout2.getChildAt(0)).getAdapter().notifyDataSetChanged();
+        } else {
+            ((RecyclerView)frameLayout1.getChildAt(0)).getAdapter().notifyDataSetChanged();
         }
     }
 
@@ -455,7 +468,11 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
      * @return
      */
     public List<ClassifySeletorItem> getSelectItems() {
-        return ((ItemAdapter) ((RecyclerView) frameLayoutTop.getChildAt(0)).getAdapter()).getStatus();
+        List<ClassifySeletorItem> data= ((ItemAdapter) ((RecyclerView) frameLayoutTop.getChildAt(0)).getAdapter()).getStatus();
+        if(data.size()==0&&seletedItem!=null){
+            data.add(seletedItem);
+        }
+        return data;
     }
 
     /**
