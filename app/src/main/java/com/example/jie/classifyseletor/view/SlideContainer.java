@@ -12,6 +12,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,8 +41,8 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
     private SlideContainListener slideContainListener;//获取数据的接口，把数据加载这个委托出去
     private boolean allowClick = true;//是否允许点击，避免动画过程中点击，造成数据混乱
     private Map<String, ClassifySeletorItem> path = new HashMap<>();//用来存储选择的路径
+    private Map<Integer,RecycleViewPosition> positionCache=new HashMap<>();//用来缓存滑动的位置，方便恢复
     private View maskView1, maskView2;//遮罩
-
 
     private ItemAdapter itemAdapter1, itemAdapter2;
 
@@ -87,6 +88,8 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
 
         recyclerView1.setOverScrollMode(RecyclerView.OVER_SCROLL_NEVER);
         recyclerView2.setOverScrollMode(RecyclerView.OVER_SCROLL_NEVER);
+
+
     }
 
 
@@ -111,6 +114,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         int nowPos=level-1;//因为数据加载成功以后，会考虑加载下一页的数据，所以要－1
         level = position;
         getData(-1, path.get(position + ""));
+        restorePosition(position,(RecyclerView)((FrameLayout)getChildAt(0)).getChildAt(0));//还原位置
         moveBackPage(nowPos,position);
         return true;
     }
@@ -125,7 +129,10 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         }
         if (!item.getFinal()) {
             //不是最后一级，就加载新的一页的数据
+            savePosition(level-1);//存加载前的0序列
             getData(position, item);
+            //新的页面滑动到第一个
+            ((LinearLayoutManager)((RecyclerView)((FrameLayout)getChildAt(0)).getChildAt(0)).getLayoutManager()).scrollToPositionWithOffset(0, 0);
             moveNextPage();
         }
     }
@@ -233,8 +240,9 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
                 allowClick = true;//动画过程结束，可以点击
                 maskView1.setAlpha(0);
                 maskView2.setAlpha(0);
-                //加载了下一页，要把上一页的选中状态清理了。
-                ((ItemAdapter)((RecyclerView)((FrameLayout)getChildAt(0)).getChildAt(0)).getAdapter()).reset();
+                //加载了下一页，要把上一页的选中状态清理了，避免滑动看到状态的突变
+                RecyclerView bottomRv=(RecyclerView)((FrameLayout)getChildAt(0)).getChildAt(0);
+                ((ItemAdapter)(bottomRv).getAdapter()).reset();
             }
 
             @Override
@@ -348,8 +356,10 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
                         //把再前面一页的数据加载好，避免再次回退，看到不正确的数据
                         getData(-1, path.get((level-2+"")));
                         level--;//加载数据level会自增，这里减回来。
+                        if(level>1){
+                            restorePosition(level-2,(RecyclerView)((FrameLayout)getChildAt(0)).getChildAt(0));//还原位置
+                        }
                     }
-
                 }
                 allowClick = true;//动画过程结束，可以点击
                 maskView1.setAlpha(0);
@@ -364,6 +374,27 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
             }
         });
         animator.start();
+    }
+
+    /**
+     * 还原recycler的位置
+     */
+    private void restorePosition(int page,RecyclerView rv){
+        RecycleViewPosition pos=positionCache.get(page);
+        Log.i(TAG, "restorePosition: page:"+page+",pos:"+pos);
+        ((LinearLayoutManager)rv.getLayoutManager()).scrollToPositionWithOffset(pos.lastPosition, pos.lastOffset);
+    }
+
+    /**
+     * 页面跳转的时候，保存上面的rv的滑动位置
+     * @param page
+     */
+    private void savePosition(int page){
+        RecyclerView rv=(RecyclerView)((FrameLayout)getChildAt(1)).getChildAt(0);
+        View topView = rv.getLayoutManager().getChildAt(0);          //获取可视的第一个view
+        RecycleViewPosition pos=new RecycleViewPosition(rv.getLayoutManager().getPosition(topView), topView.getTop());
+        Log.i(TAG, "savePosition: page:"+page+","+pos);
+        positionCache.put(page,pos);
     }
 
     //根据点击的item，获取下一页的新数据
@@ -430,8 +461,13 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
     /**
      * 全部取消
      */
-    public void reset() {
-        ((ItemAdapter) ((RecyclerView) frameLayoutTop.getChildAt(0)).getAdapter()).reset();
+    public boolean reset() {
+        //滑动过程不可点击
+        if(allowClick){
+            ((ItemAdapter) ((RecyclerView) frameLayoutTop.getChildAt(0)).getAdapter()).reset();
+            return true;
+        }
+        return false;
     }
 
 
@@ -468,5 +504,21 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
          * @return false：不是，true：是
          */
         Boolean isFinal(ClassifySeletorItem item);
+    }
+
+    //用来存放 recycler的滑动位置
+    class RecycleViewPosition{
+        public int lastPosition;
+        public int lastOffset;
+
+        public RecycleViewPosition(int lastPosition, int lastOffset) {
+            this.lastPosition = lastPosition;
+            this.lastOffset = lastOffset;
+        }
+
+        @Override
+        public String toString() {
+            return "("+lastPosition+","+lastOffset+")";
+        }
     }
 }

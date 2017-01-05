@@ -96,6 +96,8 @@ public class ClassifySeletorView extends LinearLayout {
             @Override
             public void clickItem(boolean isSelected, ItemAdapter.ItemViewHolder holder, int position, ClassifySeletorItem item) {
                 seletorListener.clickItem(isSelected, holder, position, item);
+                Log.i(TAG, "clickItem: "+item.getName());
+
             }
 
             @Override
@@ -127,10 +129,11 @@ public class ClassifySeletorView extends LinearLayout {
         btnReset.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                titleAdapter.setPage(0);
-                slideContainer.setPage(0);
-                slideContainer.reset();
-                classifySeletorListener.clickReset();
+                if( slideContainer.reset()){
+                    titleAdapter.setPage(0);
+                    slideContainer.setPage(0);
+                    classifySeletorListener.clickReset();
+                }
             }
         });
         titleAdapter = new TitleAdapter(context, rvTitle);
