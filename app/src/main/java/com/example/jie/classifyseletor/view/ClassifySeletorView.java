@@ -137,8 +137,8 @@ public class ClassifySeletorView extends LinearLayout {
         //委托一下，标题被点击
         titleAdapter.setOnItemClickListener(new TitleAdapter.OnItemClickListener() {
             @Override
-            public void click(TitleAdapter.TitleViewHolder holder, int position, ClassifySeletorItem item) {
-                slideContainer.setPage(position);
+            public boolean click(TitleAdapter.TitleViewHolder holder, int position, ClassifySeletorItem item) {
+                return slideContainer.setPage(position);
             }
         });
 

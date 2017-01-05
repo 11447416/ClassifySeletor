@@ -97,24 +97,22 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
 
     /**
      * 设置当前是第几页，主要是点击导航的时候，直接切换到某一页,
-     *
      * @param position
+     * @return 如果被成功处理了点击时间，就返true，否则返回false。避免动画过程中，点击了标题，标题消失，但是页面没有跟上
      */
-    public void setPage(int position) {
-        if (!allowClick) return;
+    public boolean setPage(int position) {
+        if (!allowClick) return false;
         //删除多余的路径
         int size = path.size();
         for (int i = position; i < size; i++) {
             path.remove(path.size() - 1);
         }
-
         //这里逻辑有的复杂，要保证，getData前level是0序列，加载以后level是1序列。就可以了
         int nowPos=level-1;//因为数据加载成功以后，会考虑加载下一页的数据，所以要－1
         level = position;
         getData(-1, path.get(position + ""));
-        level++;//页面加载以后＋1
         moveBackPage(nowPos,position);
-
+        return true;
     }
 
     @Override
@@ -129,7 +127,6 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
             //不是最后一级，就加载新的一页的数据
             getData(position, item);
             moveNextPage();
-            level++;
         }
     }
 
@@ -156,7 +153,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (level <= 1) return false;//最上面一级，不可以再滑动
+        if (level <= 1||!allowClick) return false;//最上面一级，不可以再滑动,在动画过程不允许滑动
         switch (event.getAction()) {
             case MotionEvent.ACTION_MOVE:
                 //当向右滑动
@@ -340,11 +337,22 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
                 if (needExchange) {
                     needExchange = false;
                     level--;//退回来到加载当前页
-                    level--;//加载当页的上一页
-                    getData(-1, path.get((level+"")));
+//                    level--;//加载当页的上一页
+//                    getData(-1, path.get((／level+"")));//因为页面复用的原因，上一页，本来还是原来的数据，所以不用加载数据
                     if(slideContainListener!=null)slideContainListener.pageBack(level,path.get(level+""));
-                    level++;//加载完了 深度＋1
+                    //更新状态，取消已经选中的按钮
+                    if(frameLayoutTop==frameLayout1){
+                        itemAdapter2.notifyDataSetChanged();
+                    }else{
+                        itemAdapter1.notifyDataSetChanged();
+                    }
                     changePage();
+                    if(level>0){
+                        //把再前面一页的数据加载好，避免再次回退，看到不正确的数据
+                        getData(-1, path.get((level-2+"")));
+                        level--;//加载数据level会自增，这里减回来。
+                    }
+
                 }
                 allowClick = true;//动画过程结束，可以点击
                 maskView1.setAlpha(0);
@@ -399,6 +407,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
             }
         }
         itemAdapter.setData(data);
+        level++;//加载完数据以后，一定要把深度＋1
     }
 
     public SlideContainListener getSlideContainListener() {
@@ -409,7 +418,6 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         this.slideContainListener = slideContainListener;
         //获取第一页的初始化数据
         getData(0, null);
-        level++;
     }
 
     /**
@@ -440,7 +448,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         List<ClassifySeletorItem> getData(int itemPosition, ClassifySeletorItem item, int currentPage);
 
         /**
-         * 页面回退的时候
+         * 页面回退的时候，主要是把事件通知出去，做标题的处理
          * @param level 深度 0序，加载首页的时候，是0
          * @param item 加载的时候，父级别的item
          */
