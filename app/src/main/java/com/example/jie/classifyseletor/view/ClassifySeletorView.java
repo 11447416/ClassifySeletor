@@ -168,14 +168,10 @@ public class ClassifySeletorView extends LinearLayout {
             }
 
             @Override
-            public List<ClassifySeletorItem> pageBack(int currentPage, ClassifySeletorItem item) {
+            public void pageBack(int currentPage, ClassifySeletorItem item) {
                 //返回的时候，还要加载数据
                 titleAdapter.pop();
-                if (null == item) {
-                    return classifySeletorListener.getData(2, firstHeadItem);
-                } else {
-                    return classifySeletorListener.getData(currentPage + 1, item);
-                }
+
             }
 
             @Override
