@@ -100,14 +100,15 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
      */
     public void setPage(int position) {
         if (!allowClick) return;
-
         //删除多余的路径
         int size=path.size();;
         for (int i = position; i <size; i++) {
             path.remove(path.size() - 1);
         }
+//        level = position;
+//        getData(-1, path.get(level + ""));
+        moveBackPage(position);
         level = position;
-        getData(-1, path.get(level + ""));
     }
 
     @Override
@@ -200,6 +201,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
      */
     private void changePage() {
         final View view = getChildAt(0);
+
         removeView(view);
         addView(view);
         if (frameLayout1 == frameLayoutTop) {
@@ -207,8 +209,10 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         } else {
             frameLayoutTop = frameLayout1;
         }
+        //交换以后，要恢复位置
+        frameLayout1.setTranslationX(0f);
+        frameLayout2.setTranslationX(0f);
     }
-
     //前进的动画和页面交换
     private void moveNextPage() {
         changePage();
@@ -249,6 +253,58 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         animator.start();
     }
 
+    /**
+     *  返回到第position个页面
+     * @param position
+     */
+    private void moveBackPage(int position){
+        int moveNum=level-position-1;
+        if(moveNum<=0)return;
+        final View topView = getChildAt(1);
+        final View bottomView = getChildAt(0);
+        ValueAnimator animator = ValueAnimator.ofFloat(0, topView.getMeasuredWidth()).setDuration(500/moveNum);
+        if(moveNum>1)animator.setRepeatCount(moveNum-1);//移动多余1页，就需要重复
+        animator.setRepeatMode(ValueAnimator.RESTART);
+        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                float value= (float) valueAnimator.getAnimatedValue();
+                topView.setTranslationX(value);
+                bottomView.setTranslationX(-value * parallax);
+                //处理遮罩层变化
+                if (frameLayout1 == frameLayoutTop) {
+                    maskView2.setAlpha(alpha-alpha*(value/frameLayout1.getMeasuredWidth()));
+                } else {
+                    maskView1.setAlpha(alpha-alpha*(value/frameLayout2.getMeasuredWidth()));
+                }
+            }
+        });
+        animator.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+                allowClick=false;
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                topView.setTranslationX(0);
+                bottomView.setTranslationX(0);
+                allowClick=true;
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+
+            }
+        });
+        animator.start();
+    }
+
     //回退或者是恢复的动画
     private void animate(float end, final View view) {
         ValueAnimator animator = ValueAnimator.ofFloat(view.getTranslationX(), end).setDuration(500);
@@ -256,12 +312,12 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
             @Override
             public void onAnimationUpdate(ValueAnimator valueAnimator) {
                 view.setTranslationX((Float) valueAnimator.getAnimatedValue());
+                //处理遮罩层变化
                 if (frameLayout1 == frameLayoutTop) {
                     maskView2.setAlpha(alpha-alpha*(frameLayout1.getTranslationX()/frameLayout1.getMeasuredWidth()));
                 } else {
                     maskView1.setAlpha(alpha-alpha*(frameLayout2.getTranslationX()/frameLayout2.getMeasuredWidth()));
                 }
-
             }
         });
         animator.addListener(new Animator.AnimatorListener() {
@@ -291,15 +347,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
                         }
                     }
                     //出去
-                    if (frameLayout1 == frameLayoutTop) {
-                        removeView(frameLayout1);
-                        addView(frameLayout1, 0);
-                        frameLayoutTop = frameLayout2;
-                    } else {
-                        removeView(frameLayout2);
-                        addView(frameLayout2, 0);
-                        frameLayoutTop = frameLayout1;
-                    }
+                    changePage();
                 }
                 allowClick = true;//动画过程结束，可以点击
                 maskView1.setAlpha(0);
@@ -323,13 +371,13 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
         List<ClassifySeletorItem> data;
         ItemAdapter itemAdapter;
         //第一次加载或者点击的获取全部分类
-        if (null == item || (-1 == itemPosition && null == item)) {
+        if (null == item) {
             //获取首页的数据
             data = slideContainListener.getData(itemPosition, item, level);
             if (null == data) return;
             itemAdapter = (ItemAdapter) recyclerView2.getAdapter();
             level++;
-            if ((-1 == itemPosition && null == item)) {
+            if (-1 == itemPosition) {
                 //判断显示在那个recycler上面
                 if (frameLayoutTop == frameLayout1) {
                     itemAdapter = (ItemAdapter) recyclerView2.getAdapter();
@@ -340,7 +388,10 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
             }
         } else {
             //如果不是点击的导航，需要把点击加入到路径，点击的导航，不需要添加
-            if (-1 != itemPosition) path.put("" + level, item);
+            if (-1 != itemPosition) {
+                path.put("" + level, item);
+                level++;
+            }
             //加载下一页的数据
             data = slideContainListener.getData(itemPosition, item, level);
             if (null == data) return;
@@ -350,7 +401,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
             } else {
                 itemAdapter = (ItemAdapter) recyclerView1.getAdapter();
             }
-            level++;
+
             if (-1 != itemPosition) {
                 moveNextPage();//页面动画
             } else {
