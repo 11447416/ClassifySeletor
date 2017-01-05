@@ -132,6 +132,7 @@ public class ClassifySeletorView extends LinearLayout {
                 if( slideContainer.reset()){
                     titleAdapter.setPage(0);
                     slideContainer.setPage(0);
+                    slideContainer.clearSelected();//要下班回家吃饭了，粗爆的设置
                     classifySeletorListener.clickReset();
                 }
             }

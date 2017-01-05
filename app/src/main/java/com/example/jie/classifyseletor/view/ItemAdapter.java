@@ -32,7 +32,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
     private  boolean isSingleSelete=false;
 
     //为了一个蛋疼的跳了页面，还要认为刚才的是选中的
-    private static ClassifySeletorItem seletedItem;
+    public static ClassifySeletorItem seletedItem;
 
     public ItemAdapter(Context context) {
         items = new ArrayList<>();

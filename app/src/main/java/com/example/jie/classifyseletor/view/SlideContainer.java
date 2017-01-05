@@ -46,7 +46,12 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
 
     private ItemAdapter itemAdapter1, itemAdapter2;
 
-    private ClassifySeletorItem seletedItem;
+    public ClassifySeletorItem seletedItem;
+
+    public void clearSelected(){
+        ItemAdapter.seletedItem=null;
+        seletedItem=null;
+    }
 
     public SlideContainer(Context context) {
         super(context);
@@ -394,7 +399,7 @@ public class SlideContainer extends FrameLayout implements ItemAdapter.OnItemCli
      */
     private void restorePosition(int page,RecyclerView rv){
         RecycleViewPosition pos=positionCache.get(page);
-        Log.i(TAG, "restorePosition: page:"+page+",pos:"+pos);
+        if(null==null)return;
         ((LinearLayoutManager)rv.getLayoutManager()).scrollToPositionWithOffset(pos.lastPosition, pos.lastOffset);
     }
 
